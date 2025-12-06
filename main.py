@@ -24,10 +24,33 @@ import random
 import time
 from collections import deque
 from fastapi import FastAPI, Request, Query
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
 from typing import Dict, Optional
 
 app = FastAPI(title="Smart Oil IoT Simulator")
+
+# CORS middleware for /api/history endpoint only
+@app.middleware("http")
+async def cors_for_history(request: Request, call_next):
+    response = await call_next(request)
+    if request.url.path == "/api/history":
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
+
+# Handle OPTIONS preflight for /api/history
+@app.options("/api/history")
+async def history_options():
+    return JSONResponse(
+        content={},
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+        }
+    )
 
 # --- Device & simulation state ---
 DEVICE_ID = "oil-sensor-001"
